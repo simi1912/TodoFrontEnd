@@ -11,6 +11,7 @@
     "react-scripts": "4.0.3",
     "web-vitals": "^1.1.2"
   },
+  "proxy": "https://ced1de242e5548749269e45e91682099.vfs.cloud9.eu-central-1.amazonaws.com:8081",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
