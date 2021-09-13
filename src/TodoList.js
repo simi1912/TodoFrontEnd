@@ -1,8 +1,9 @@
 import {Component} from 'react';
 import TodoItem from './TodoItem';
 import TodoForm from './TodoForm';
+import * as apiCalls from './api';
 
-const APIURL = '/api/todos';
+const APIURL = '/api/todos/';
 
 class TodoList extends Component {
     constructor(props){
@@ -18,52 +19,30 @@ class TodoList extends Component {
         this.loadTodos();
     }
     
-    loadTodos(){
-        fetch(APIURL)
-            .then( resp => {
-                if(!resp.ok){
-                    if(resp.status >= 400 && resp.status < 500){
-                        return resp.jsosn().then(data => {
-                            let err = {errorMessage: data.message};
-                            throw err;
-                        });
-                    } else {
-                        let err = {errorMesssage: "Try again later"};
-                        throw err;
-                    }
-                }
-                
-                return resp.json()
-            })
-            .then(todos => this.setState({todos}));
+    async loadTodos(){
+        let todos = await apiCalls.getTodos();
+        this.setState({todos});
     }
     
-    addTodo(val){
-        fetch(APIURL, {
-            method: 'post',
-            headers: new Headers({
-                'Content-Type': 'application/json',
-            }),
-            body: JSON.stringify({name: val})
-        })
-            .then( resp => {
-                if(!resp.ok){
-                    if(resp.status >= 400 && resp.status < 500){
-                        return resp.jsosn().then(data => {
-                            let err = {errorMessage: data.message};
-                            throw err;
-                        });
-                    } else {
-                        let err = {errorMesssage: "Try again later"};
-                        throw err;
-                    }
-                }
-                
-                return resp.json()
-            })
-            .then(newTodo => {
-                this.setState({todos: [...this.state.todos, newTodo]})
-            })
+    async addTodo(val){
+        let newTodo = await apiCalls.createTodo(val);
+        this.setState({todos: [...this.state.todos, newTodo]});
+    }
+    
+    async deleteTodo(id){
+        apiCalls.removeTodo(id);
+        
+        const todos = this.state.todos.filter(todo => todo._id !== id)
+        this.setState({todos: todos});
+    }
+    
+    async onToggle(todo){
+        const updatedTodo = await apiCalls.toggleTodo(todo); 
+        
+        const todos = this.state.todos.map(t => 
+            (t._id === updatedTodo._id) ? {...t, completed: !t.completed} : t
+        )
+        this.setState({todos: todos});
     }
     
     render(){
@@ -71,6 +50,8 @@ class TodoList extends Component {
             <TodoItem
                 key={t._id}
                 {...t}
+                onDelete={this.deleteTodo.bind(this, t._id)}
+                onToggle={this.onToggle.bind(this, t)}
             />
         ));
         return(
